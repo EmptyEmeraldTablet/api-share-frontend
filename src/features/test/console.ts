@@ -35,6 +35,7 @@ export function initTestConsole(options: TestConsoleOptions = {}): TestConsoleAp
     run: document.getElementById('test-run-btn') as HTMLButtonElement,
     stop: document.getElementById('test-stop-btn') as HTMLButtonElement,
     models: document.getElementById('test-models-btn') as HTMLButtonElement,
+    clearInfo: document.getElementById('test-clear-info-btn') as HTMLButtonElement,
     clear: document.getElementById('test-clear-btn') as HTMLButtonElement,
     status: document.getElementById('test-status') as HTMLDivElement,
     summary: document.getElementById('test-summary') as HTMLDivElement,
@@ -285,6 +286,20 @@ export function initTestConsole(options: TestConsoleOptions = {}): TestConsoleAp
     options.onClear?.();
   }
 
+  function clearTestInfo(): void {
+    if (testState.running) {
+      setTestStatus('测试进行中，无法清空信息。', 'error');
+      return;
+    }
+    const providerId = elements.provider.value as ProviderId;
+    elements.form.reset();
+    elements.provider.value = providerId;
+    applyProviderDefaults(providerId);
+    elements.concurrency.value = '3';
+    elements.lowThreshold.value = '';
+    setTestStatus('');
+  }
+
   function prefillFromRecord(record: ApiKeyRecord): void {
     const providerId = record.provider && PROVIDERS.some((p) => p.id === record.provider)
       ? (record.provider as ProviderId)
@@ -350,6 +365,7 @@ export function initTestConsole(options: TestConsoleOptions = {}): TestConsoleAp
     void runTests();
   });
   elements.stop.addEventListener('click', () => stopTests());
+  elements.clearInfo.addEventListener('click', () => clearTestInfo());
   elements.clear.addEventListener('click', () => clearTestResults());
   elements.modelList.addEventListener('click', (event) => {
     const target = event.target as HTMLElement;
