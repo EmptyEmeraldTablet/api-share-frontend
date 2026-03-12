@@ -12,6 +12,9 @@ export function initApp(): void {
     onResults: (results) => {
       keysListApi?.updateTestResults(results);
     },
+    onClear: () => {
+      keysListApi?.clearTestResults();
+    },
   });
   const keysList = initKeysList({
     onLocalTest: (record) => testConsole.prefillFromRecord(record),

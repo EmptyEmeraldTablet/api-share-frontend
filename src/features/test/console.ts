@@ -16,6 +16,7 @@ const MAX_CONCURRENCY = 5;
 
 type TestConsoleOptions = {
   onResults?: (results: TestResult[]) => void;
+  onClear?: () => void;
 };
 
 export function initTestConsole(options: TestConsoleOptions = {}): TestConsoleApi {
@@ -281,6 +282,7 @@ export function initTestConsole(options: TestConsoleOptions = {}): TestConsoleAp
     testState.results = [];
     renderTestBlocks(elements.summary, elements.results, []);
     setTestStatus('');
+    options.onClear?.();
   }
 
   function prefillFromRecord(record: ApiKeyRecord): void {

@@ -272,5 +272,9 @@ export function initKeysList(options: KeysListOptions) {
       }
       renderList(store.getState());
     },
+    clearTestResults: () => {
+      feedbackState.clear();
+      renderList(store.getState());
+    },
   };
 }
