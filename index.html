@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			name="description"
+			content="公益 API Key 共享平台，提供列表查询、提交与反馈。"
+		/>
+		<title>API Share</title>
+	</head>
+	<body>
+		<div id="app" class="app">
+			<header class="hero" data-animate style="--delay: 0ms">
+				<div class="hero__content">
+					<p class="eyebrow">公益共享</p>
+					<h1>API Key 共享平台</h1>
+					<p class="lead">
+						由社区共建的 API Key 分享仓。请先本地验证再提交反馈，避免无效数据堆积。
+					</p>
+					<div class="hero__actions">
+						<button id="refresh-btn" class="btn primary">刷新列表</button>
+						<button id="jump-test" class="btn subtle">测试 Key</button>
+						<button id="jump-submit" class="btn ghost">提交新 API</button>
+					</div>
+					<div class="stats">
+						<div class="stat">
+							<span class="stat__label">总数</span>
+							<span id="stat-total" class="stat__value">0</span>
+						</div>
+						<div class="stat">
+							<span class="stat__label">已展示</span>
+							<span id="stat-shown" class="stat__value">0</span>
+						</div>
+						<div class="stat">
+							<span class="stat__label">更新</span>
+							<span id="stat-updated" class="stat__value">--</span>
+						</div>
+					</div>
+				</div>
+				<aside class="hero__panel">
+					<h2>使用提示</h2>
+					<ul class="tips">
+						<li>API Key 为公开共享，请勿用于生产环境。</li>
+						<li>提交前请先完成本地验证，再进行反馈。</li>
+						<li>失败率过高或长期无反馈的记录会被自动隐藏。</li>
+					</ul>
+					<div class="callout">
+						<span>开发模式：</span>
+						<code>/api</code> 代理至 <code>http://localhost:8787</code>
+					</div>
+				</aside>
+			</header>
+
+			<main>
+				<section id="list" class="panel" data-animate style="--delay: 80ms">
+					<div class="section-head">
+						<div>
+							<h2>可用列表</h2>
+							<p>仅展示未隐藏的记录，支持分页加载。</p>
+						</div>
+						<div class="section-actions">
+							<button id="load-more-btn" class="btn subtle" disabled>
+								加载更多
+							</button>
+						</div>
+					</div>
+					<div id="status" class="status" role="status" aria-live="polite"></div>
+					<div id="keys-list" class="keys-grid"></div>
+					<div id="empty-state" class="empty">
+						<p>暂时没有可用 API，欢迎分享你的资源。</p>
+					</div>
+				</section>
+
+				<section id="test" class="panel panel--tester" data-animate style="--delay: 110ms">
+					<div class="section-head">
+						<div>
+							<h2>API Key 测试</h2>
+							<p>测试请求在浏览器本地发起，需自行处理 CORS 或代理限制。</p>
+						</div>
+						<div class="section-actions">
+							<button id="test-models-btn" type="button" class="btn subtle">探测模型</button>
+							<button id="test-clear-btn" type="button" class="btn ghost">清空结果</button>
+						</div>
+					</div>
+					<form id="test-form" class="form test-form">
+						<div class="form-row">
+							<label>
+								<span>Provider</span>
+								<select id="test-provider"></select>
+							</label>
+							<label>
+								<span>Base URL</span>
+								<input
+									id="test-base-url"
+									type="url"
+									placeholder="https://api.example.com/v1"
+									required
+								/>
+							</label>
+							<label>
+								<span>Model</span>
+								<input id="test-model" type="text" placeholder="gpt-4o-mini" />
+							</label>
+							<label>
+								<span>可用模型</span>
+								<select id="test-model-select" disabled>
+									<option value="">未探测</option>
+								</select>
+							</label>
+						</div>
+						<div class="form-row">
+							<label>
+								<span>Endpoint Suffix</span>
+								<input id="test-endpoint" type="text" placeholder="/chat/completions" />
+							</label>
+							<label>
+								<span>并发数</span>
+								<input id="test-concurrency" type="number" min="1" max="5" value="3" />
+							</label>
+							<label>
+								<span>低余额阈值</span>
+								<input id="test-low" type="number" min="0" step="0.01" placeholder="可选" />
+							</label>
+						</div>
+						<label>
+							<span>验证提示词</span>
+							<textarea
+								id="test-prompt"
+								rows="2"
+								placeholder="可选，默认使用 'Hi'"
+							></textarea>
+						</label>
+						<label>
+							<span>待测试 Keys</span>
+							<textarea
+								id="test-keys"
+								rows="4"
+								placeholder="支持空格、换行、逗号、分号分隔，最多 10 个"
+							></textarea>
+						</label>
+						<div class="form-actions">
+							<button id="test-run-btn" type="submit" class="btn primary">开始测试</button>
+							<button id="test-stop-btn" type="button" class="btn ghost">停止</button>
+						</div>
+					</form>
+					<div id="test-status" class="status" role="status" aria-live="polite"></div>
+					<div id="test-summary" class="test-summary"></div>
+					<div id="test-model-list" class="model-list"></div>
+					<div id="test-results" class="test-results"></div>
+					<p class="hint">
+						如遇到跨域限制，可使用本地代理或浏览器扩展进行验证，单次测试建议不超过 10 个 Key。
+					</p>
+				</section>
+
+				<section
+					id="submit"
+					class="panel panel--accent"
+					data-animate
+					style="--delay: 140ms"
+				>
+					<div class="section-head">
+						<div>
+							<h2>提交新 API</h2>
+							<p>提交前需完成模型探测与本地测试，结果由你确认。</p>
+						</div>
+					</div>
+					<form id="submit-form" class="form submit-form">
+						<div class="form-row">
+							<label>
+								<span>Provider</span>
+								<select id="submit-provider" name="provider"></select>
+							</label>
+							<label>
+								<span>Base URL</span>
+								<input
+									id="submit-base-url"
+									name="base_url"
+									type="url"
+									placeholder="https://api.example.com"
+									required
+								/>
+							</label>
+							<label>
+								<span>API Key</span>
+								<input
+									id="submit-api-key"
+									name="api_key"
+									type="text"
+									placeholder="sk-..."
+									required
+								/>
+							</label>
+						</div>
+						<div class="form-row">
+							<label>
+								<span>Endpoint Suffix</span>
+								<input
+									id="submit-endpoint"
+									name="endpoint_suffix"
+									type="text"
+									placeholder="/chat/completions"
+								/>
+							</label>
+							<label>
+								<span>验证提示词</span>
+								<input
+									id="submit-prompt"
+									name="validation_prompt"
+									type="text"
+									placeholder="可选，默认使用 'Hi'"
+								/>
+							</label>
+							<label>
+								<span>模型选择</span>
+								<select id="submit-model-select" name="model" disabled>
+									<option value="">未探测</option>
+								</select>
+							</label>
+						</div>
+						<label>
+							<span>描述</span>
+							<textarea
+								id="submit-description"
+								name="description"
+								rows="3"
+								placeholder="示例：OpenAI 中转，速率限制较少"
+							></textarea>
+						</label>
+						<div class="form-actions">
+							<button id="submit-probe-btn" type="button" class="btn subtle">
+								探测模型
+							</button>
+							<button id="submit-test-btn" type="button" class="btn ghost" disabled>
+								测试
+							</button>
+							<button id="submit-submit-btn" type="submit" class="btn primary" disabled>
+								提交
+							</button>
+							<button type="reset" class="btn ghost">清空</button>
+						</div>
+					</form>
+					<div id="submit-status" class="status" role="status" aria-live="polite"></div>
+					<div id="submit-model-list" class="model-list"></div>
+					<div id="submit-summary" class="test-summary"></div>
+					<div id="submit-results" class="test-results"></div>
+					<p class="hint">
+						提交前需先探测模型并完成测试，测试通过后可选择是否提交。
+					</p>
+				</section>
+
+				<section id="verify" class="panel" data-animate style="--delay: 200ms">
+					<h2>本地验证建议</h2>
+					<div class="how-grid">
+						<div class="how-card">
+							<h3>轻量请求</h3>
+							<p>
+								使用标准端点发送最小请求，验证返回状态码与响应格式。
+							</p>
+						</div>
+						<div class="how-card">
+							<h3>CORS 限制</h3>
+							<p>
+								浏览器可能被 CORS 阻止，可使用本地代理或工具验证。
+							</p>
+						</div>
+						<div class="how-card">
+							<h3>反馈闭环</h3>
+							<p>
+								验证结果直接提交反馈，帮助系统计算成功率与可信度。
+							</p>
+						</div>
+					</div>
+				</section>
+			</main>
+
+			<footer class="footer">
+				<p>开放共享，理性使用。请勿提交生产级敏感凭据。</p>
+			</footer>
+		</div>
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
