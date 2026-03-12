@@ -137,13 +137,6 @@ function isOpenAIResponsesResponse(raw: unknown) {
   return false;
 }
 
-function isAnthropicMessageResponse(raw: unknown) {
-  if (!raw || typeof raw !== 'object') return false;
-  const obj: any = raw;
-  if (obj.type === 'message') return true;
-  return Array.isArray(obj.content) && obj.content.length > 0;
-}
-
 type OpenAIEndpointKind = 'chat' | 'responses' | 'completions' | 'other';
 
 function getOpenAIEndpointKind(endpointPath: string): OpenAIEndpointKind {
